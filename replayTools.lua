@@ -3,11 +3,14 @@ local app_folder = ac.getFolder(ac.FolderID.ACApps) .. '/lua/replayTools/'
 local resultsPage = nil
 local resultsFile = JSON.parse(ac.load("resultsFile"))
 local page = 0
+local selectedDriver = ""
 local resultsFilepath = ""
-local server = 0
 local settings = ac.storage{
-  URL = "http://162.19.220.231:8772"
+  URL = "http://162.19.220.231:8772",
+  serverNumber = "0"
 }
+local URL = settings.URL
+local serverNumber = settings.serverNumber
 
 
 function script.windowMain(dt)
@@ -21,19 +24,29 @@ function script.windowMain(dt)
           ac.debug("frame", sim.replayCurrentFrame)
           ac.debug("total", sim.replayFrames)
           ui.columns(2, true, "columnlayout")
+          ui.combo("Driver", selectedDriver, function()
+            if ui.selectable("None") then
+              selectedDriver = ""
+            end
+            for index, value in ipairs(resultsFile["Cars"]) do
+              if ui.selectable(value["Driver"]["Name"]) then
+                selectedDriver = value["Driver"]["Name"]
+              end
+            end
+          end)
           ui.childWindow("Event Table", vec2(500, 500), function()
             if resultsFile ~= nil then
               local replayStartTime = (resultsFile["Laps"][1]["Timestamp"] - (resultsFile["Laps"][1]["LapTime"] / 1000)) -
-              resultsFile["SessionConfig"]["wait_time"]
+                  resultsFile["SessionConfig"]["wait_time"]
               --ac.log(replayStartTime)
               ac.debug("Events", resultsFile["Laps"])
               for index, value in ipairs(resultsFile["Events"]) do
-                if value["Driver"]["Name"] ~= resultsFile["Events"][math.min(index + 1, #resultsFile["Events"])]["OtherDriver"]["Name"] then
-                  if ui.button(ac.lapTimeToString(((value["Timestamp"] - replayStartTime - 1) - ((value["Timestamp"] - replayStartTime - 1) * 0.0013)) * 1000) .. " " .. value["Driver"]["Name"] .. " " .. ((value["Type"] == "COLLISION_WITH_CAR" and "with") or (value["Type"] == "COLLISION_WITH_ENV" and "With Environment. lmao.")) .. " " .. value["OtherDriver"]["Name"]) then
+                if (value["Driver"]["Name"] ~= resultsFile["Events"][math.min(index + 1, #resultsFile["Events"])]["OtherDriver"]["Name"]) and ((selectedDriver == "") or (value["Driver"]["Name"] == selectedDriver or value["OtherDriver"]["Name"] == selectedDriver)) then
+                  if ui.button(ac.lapTimeToString(((value["Timestamp"] - replayStartTime - 3) - ((value["Timestamp"] - replayStartTime - 3) * 0.0013)) * 1000) .. " " .. value["Driver"]["Name"] .. " " .. ((value["Type"] == "COLLISION_WITH_CAR" and "with") or (value["Type"] == "COLLISION_WITH_ENV" and "With Environment. lmao.")) .. " " .. value["OtherDriver"]["Name"] .. " at " .. math.round(value["ImpactSpeed"],2) .. " km/h") then
                     --ac.log(((value["Timestamp"]-replayStartTime-1)-((value["Timestamp"]-replayStartTime-1)*0.004)*1000)/sim.replayFrameMs)
                     ac.setReplayPosition(
-                    (((value["Timestamp"] - replayStartTime - 2) - ((value["Timestamp"] - replayStartTime - 2) * 0.0013)) * 1000) /
-                    sim.replayFrameMs, 1)
+                      (((value["Timestamp"] - replayStartTime - 3) - ((value["Timestamp"] - replayStartTime - 3) * 0.0013)) * 1000) /
+                      sim.replayFrameMs, 1)
                     ac.focusCar(math.max(ac.getCarByDriverName(value["Driver"]["Name"]),
                       (ac.getCarByDriverName(value["OtherDriver"]["Name"]))))
                   end
@@ -42,9 +55,7 @@ function script.windowMain(dt)
             end
           end)
           ui.nextColumn()
-          for index, value in ipairs(resultsFile["Events"]) do
-            
-          end
+
           ui.columns(1, true, "columnlayout")
         end) --events tab
       end)   --Replay Controls Tab Bar
@@ -56,15 +67,22 @@ function script.windowMain(dt)
       if ui.button("Autofill") then
         searchQuery = "+" .. ac.getTrackID()
       end
+      local URL, URLChanged, URLConfirm = ui.inputText("Server URL", URL, ui.InputTextFlags.RetainSelection) 
+      if URLConfirm then
+        settings.URL = URL
+      end
 
+      local serverNumber, serverNumberChanged, serverNumberConfirm = ui.inputText("Server Number", serverNumber, ui.InputTextFlags.RetainSelection) 
+      if serverNumberConfirm then
+        settings.serverNumber = serverNumber
+      end
       local searchQuery, searchChanged, searchConfirm = ui.inputText("Search for results", searchQuery,
         ui.InputTextFlags.RetainSelection)
       local searchConfirmButton = ui.button("Search Results")
 
       --ac.debug("c", ui.combo("Session Type", "Session Type", ui.ComboFlags.None, function() ui.menuItem()end))
 
-      ac.debug("results", resultsPage)
-      ac.debug("selected", searchQuery)
+
       if resultsPage ~= nil then
         ui.childWindow("Results List", vec2(400, 300), function()
           if resultsPage["results"] ~= nil then
@@ -92,14 +110,18 @@ function script.windowMain(dt)
       end --Results Availiable end
 
       if searchConfirm or searchConfirmButton then
-        loadResultsList(searchQuery, page)
+        loadResultsList(searchQuery, page, serverNumber)
         ac.log(searchQuery)
       end
     end) --End results File Tab
+    ui.tabItem("replayLink", ui.TabItemFlags.None, function()
+
+      
+    end)
   end)
 end
 
-function loadResultsList(input, pageNumber)
+function loadResultsList(input, pageNumber, server)
 
   local query = string.urlEncode(tostring(input), true)
 if input == nil then
