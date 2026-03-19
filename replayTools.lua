@@ -35,7 +35,7 @@ function script.windowMain(dt)
         settings.URL = URL
       end
 
-      local serverNumber, serverNumberChanged, serverNumberConfirm = ui.inputText("Server Number", serverNumber, ui.InputTextFlags.RetainSelection) 
+      serverNumber, serverNumberChanged, serverNumberConfirm = ui.inputText("Server Number", serverNumber, ui.InputTextFlags.RetainSelection) 
       if serverNumberConfirm then
         settings.serverNumber = serverNumber
       end
@@ -87,7 +87,7 @@ function script.windowMain(dt)
         ui.tabItem("Events", function()
           --ac.debug("frame", sim.replayCurrentFrame)
           --ac.debug("total", sim.replayFrames)
-          ui.columns(2, true, "columnlayout")
+          --ui.columns(2, true, "columnlayout")
           ui.combo("Driver", selectedDriver, function()
             if ui.selectable("None") then
               selectedDriver = ""
@@ -98,6 +98,15 @@ function script.windowMain(dt)
               end
             end
           end)
+      
+      if ui.checkbox("exclude env collisions", eventSort)then
+        eventSort = not eventSort
+      end
+      if eventSort  then
+        eventsortCheck = "COLLISION_WITH_ENV"
+      else
+        eventsortCheck = ""
+      end
           ui.childWindow("Event Table", vec2(500, 500), function()
             if resultsFile ~= nil then
               local replayStartTime = (resultsFile["Laps"][1]["Timestamp"] - (resultsFile["Laps"][1]["LapTime"] / 1000)) -
@@ -105,11 +114,11 @@ function script.windowMain(dt)
               --ac.log(replayStartTime)
               ac.debug("Events", resultsFile["Laps"])
               for index, value in ipairs(resultsFile["Events"]) do
-                if (value["Driver"]["Name"] ~= resultsFile["Events"][math.min(index + 1, #resultsFile["Events"])]["OtherDriver"]["Name"]) and ((selectedDriver == "") or (value["Driver"]["Name"] == selectedDriver or value["OtherDriver"]["Name"] == selectedDriver)) then
-                  if ui.button(ac.lapTimeToString(((value["Timestamp"] - replayStartTime - 3) - ((value["Timestamp"] - replayStartTime - 3) * 0.0013)) * 1000) .. " " .. value["Driver"]["Name"] .. " " .. ((value["Type"] == "COLLISION_WITH_CAR" and "with") or (value["Type"] == "COLLISION_WITH_ENV" and "With Environment. lmao.")) .. " " .. value["OtherDriver"]["Name"] .. " at " .. math.round(value["ImpactSpeed"],2) .. " km/h") then
+                if (value["Type"] ~= eventsortCheck) and (value["Driver"]["Name"] ~= resultsFile["Events"][math.min(index + 1, #resultsFile["Events"])]["OtherDriver"]["Name"]) and ((selectedDriver == "") or (value["Driver"]["Name"] == selectedDriver or value["OtherDriver"]["Name"] == selectedDriver))  then
+                  if ui.button(index .. " | " .. ac.lapTimeToString(((value["Timestamp"] - replayStartTime - 3) - ((value["Timestamp"] - replayStartTime - 3) * 0.0013)) * 1000, true) .. " " .. value["Driver"]["Name"] .. " " .. ((value["Type"] == "COLLISION_WITH_CAR" and "with") or (value["Type"] == "COLLISION_WITH_ENV" and "With Environment. lmao.")) .. " " .. value["OtherDriver"]["Name"] .. " at " .. math.round(value["ImpactSpeed"],2) .. " km/h") then
                     --ac.log(((value["Timestamp"]-replayStartTime-1)-((value["Timestamp"]-replayStartTime-1)*0.004)*1000)/sim.replayFrameMs)
                     ac.setReplayPosition(
-                      (((value["Timestamp"] - replayStartTime - 3) - ((value["Timestamp"] - replayStartTime - 3) * 0.0013)) * 1000) /
+                      (((value["Timestamp"] - replayStartTime - 5) - ((value["Timestamp"] - replayStartTime - 5) * 0.0013)) * 1000) /
                       sim.replayFrameMs, 1)
                     ac.focusCar(math.max(ac.getCarByDriverName(value["Driver"]["Name"]),
                       (ac.getCarByDriverName(value["OtherDriver"]["Name"]))))
@@ -118,7 +127,7 @@ function script.windowMain(dt)
               end
             end
           end)
-          ui.nextColumn()
+          --ui.nextColumn()
 
           ui.columns(1, true, "columnlayout")
         end) --events tab
@@ -144,6 +153,10 @@ function script.windowMain(dt)
           end
         end
       end
+    end)
+
+    ui.tabItem("About and Tutorial", ui.TabItemFlags.None, function ()
+        ui.text("Just dm me lmao i no wanna write one rn")      
     end)
   end)
 --ac.debug("time", replaystream.time)
