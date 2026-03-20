@@ -20,7 +20,7 @@ local penaltyLinkTimeout = 0
 local reversePenaltyTable
 local openInReplay = false
 local softTime = 0
-
+  
 
 local replaystream = ac.ReplayStream({
   ac.StructItem.key("replayLinkSync"),
