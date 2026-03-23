@@ -3,6 +3,8 @@ Replay Tools is a small collection of tools to integrate assetto Corsa with ACSM
 Made and tested on CSP 3.0.0preview-140, but should be fine for 2.11? (untested)
 It uses [ACSM'S API endpoints](https://wiki.emperorservers.com/assetto-corsa-server-manager/web-api) so ACSM 2.0.0+ is required for postrace and 2.4.2+ required for live. Endpoints Must be open as public from the accounts section, authentication planned for a future update.
 
+Download the repo and manually place into assettocorsa/apps/Lua/replayTools
+
 It collects incidents by connecting to ACSM via the ACSM Link tab, and can display them in one of two modes.
 
 ## Postrace
