@@ -14,3 +14,5 @@ By searching for a results file, the app can load the incidents and display them
 By ticking the "Connect to penalties log" button, penalties in the current session are displayed in the PenaltyLink tab, and can be opened with the instant replay function.
 
 This project was made by myself, without use of any AI. It is unaffiliated with ACSM, if you require support with ACSM go to their discord :)
+
+You can find my discord and other Lua bits here! https://github.com/tetematete/OSRLUASNIPPETS/tree/main
